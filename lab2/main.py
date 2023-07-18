@@ -1,6 +1,9 @@
 import collections
 import requests
 import csv
+from datetime import datetime, date, time, timedelta
+from copy import deepcopy
+#from collections import Counter
 
 class Films:
     def __init__(self , data, genres):
@@ -64,7 +67,7 @@ class Films:
         print(result)
         return result
 
-    from collections import Counter
+
     def popular_genres(self):
         lst_for_count = []
         for f in self.films:
@@ -94,8 +97,36 @@ class Films:
         print(copy_data)
         return(copy_data)
 
+    def make_collection(self, sort):
+        result_lst_dic = []
+        buff_dict = {}
+        for f in self.films:
+            title = f['original_title']
+            popular = format( f['popularity'], '.1f')
+            score = int(f['vote_average'])
+            str = f['release_date']
+            #vvv = date(0, 2 ,2)
+            day = datetime.strptime(str,'%Y-%m-%d').date()
+            #f'{str}', '%m-%d-%Y').date()
+            buff_dict.update({'Title': title, 'Popularity': popular , 'Score': score, 'Last_day_in_cinema': day})
+            unchanged_buff_dic = deepcopy(buff_dict)
+            result_lst_dic.append(unchanged_buff_dic)
+        print(result_lst_dic)
+        if sort == 1:
+            sorted_list = sorted(result_lst_dic, key=lambda x: x['Score'])
+        if sort == 2:
+            sorted_list = sorted(result_lst_dic, key=lambda x: x['Popularity'])
+        print(sorted_list)
+        return (sorted_list)
 
+    def csv_file_maker(self, coll_dict):
+        with open('lab2.txt', mode='w') as csv_file:
+            fieldnames = ['Title','Popularity','Score','Last_day_in_cinema']
+            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
 
+            writer.writeheader()
+            for d in coll_dict:
+                writer.writerow(d)
 
 
 headers = {
@@ -132,5 +163,9 @@ answer.popular_genres()
 answer.group_films_by_genres()
 # 10 answer
 answer.copy_data_with_22()
+# 11 answer
+dict_coll = answer.make_collection(2)
+# 12 answer
+answer.csv_file_maker(dict_coll)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
 #print(type(data))
