@@ -1,4 +1,6 @@
+import collections
 import requests
+import csv
 
 class Films:
     def __init__(self , data, genres):
@@ -47,6 +49,7 @@ class Films:
 
         print('6.	Unique collection of present genres (the collection should not allow inserts)')
         print(answer)
+        return answer
 
     def delete_film_with_genre(self, id_genre_del):
         ind = 0
@@ -59,15 +62,38 @@ class Films:
 
         print('7.	Delete all movies with user provided genre')
         print(result)
+        return result
 
-'''
+    from collections import Counter
     def popular_genres(self):
-        dict_times_genres = {}
-        for g in self.genres:
-        dict_times_genres.update({g['id']}:0)
-        print(dict_times_genres)
+        lst_for_count = []
+        for f in self.films:
+            for ids in f['genre_ids']:
+                lst_for_count.append(ids)
+        cnt = collections.Counter(lst_for_count)
 
-'''
+        for g in self.genres:
+            if  g['id'] == cnt.most_common(3)[0][0] or g['id'] == cnt.most_common(3)[1][0] or g['id'] == cnt.most_common(3)[2][0]:
+                print(g['name'])
+
+        print(cnt.most_common(3))
+
+    def group_films_by_genres(self):
+        group_dict = {}
+        group_dict = {g['id']: [] for g in self.genres}
+        for f in self.films:
+            for g in f['genre_ids']:
+                buff = group_dict[g]
+                buff.append(f['original_title'])
+                group_dict.update({g : buff})
+        print(group_dict)
+    def copy_data_with_22(self):
+        copy_data = self.data
+        for f in copy_data['results']:
+            f['genre_ids'][0] = 22
+        print(copy_data)
+        return(copy_data)
+
 
 
 
@@ -101,6 +127,10 @@ answer.collection_of_genres()
 #id_genre = input()
 #answer.delete_film_with_genre(id_genre)
 # 8 answer
-# answer.popular_genres()
+answer.popular_genres()
+# 9 answer
+answer.group_films_by_genres()
+# 10 answer
+answer.copy_data_with_22()
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
 #print(type(data))

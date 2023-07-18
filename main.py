@@ -1,5 +1,4 @@
 
-
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
     print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
@@ -58,7 +57,12 @@ def first_positive_line(mass):
                 return ind
         ind += 1
 
-
+def shift_mass(matrix, k = 1):
+    for i, row in enumerate(matrix):
+        if i & 1 and (offset := k % len(row)) != 0:
+            for j in range(offset):
+                matrix[i].insert(0, matrix[i].pop(-1))
+    print(matrix)
 
 mass = [[-1, -1, -1], [0, 7, 67], [0, 2, 0]]
 
@@ -68,3 +72,5 @@ print(f'the longest string with the same elements {find_long_line_mass(mass)}')
 # var 12
 print(f'delete columns with 0 {delete_zero_from_mass(mass)}')
 print(f'first line with positive number {first_positive_line(mass)}')
+# var
+print(f'shift  mass {shift_mass(mass)}')
