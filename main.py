@@ -1,8 +1,7 @@
-
-
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
     print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+
 
 # var 18
 def find_zero_col_in_mass(mass):
@@ -31,6 +30,7 @@ def find_long_line_mass(mass):
             find_less = buff
     return result
 
+
 # var12
 def delete_zero_from_mass(mass):
     ind = 0
@@ -45,9 +45,9 @@ def delete_zero_from_mass(mass):
             buff = 0
         ind += 1
 
-    #import pdb;pdb.set_trace()
-    return [ m for m in mass if tuple(m) not in ind_for_pop ]
-    #return { "a":m for m in mass if tuple(m) not in ind_for_pop }
+    # import pdb;pdb.set_trace()
+    return [m for m in mass if tuple(m) not in ind_for_pop]
+    # return { "a":m for m in mass if tuple(m) not in ind_for_pop }
 
 
 def first_positive_line(mass):
@@ -57,7 +57,6 @@ def first_positive_line(mass):
             if k > 0:
                 return ind
         ind += 1
-
 
 
 mass = [[-1, -1, -1], [0, 7, 67], [0, 2, 0]]
