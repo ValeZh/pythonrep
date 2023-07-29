@@ -3,6 +3,8 @@ import requests
 import csv
 import os
 from copy import deepcopy
+from datetime import datetime, date, time, timedelta
+import time as t
 
 logging.basicConfig(filename='file.log',
                     level=logging.INFO,
@@ -19,9 +21,10 @@ class Data_Humans:
     def __init__(self, des_fold_path,f_name = 'output.csv'):
         self.data_file = 'lab3.csv'
         self.des_fold_path = des_fold_path
-        self.file_out_name = des_fold_path + '/' + f_name + '.csv'
+        self.previous_output = f_name + '.csv'
+        self.file_out_name = des_fold_path + "\\" + f_name + '.csv'
         self.data = self.download_data()
-        self.make_dir_output_file(des_fold_path)
+        # self.make_dir_output_file(des_fold_path)
         print(self.file_out_name)
 
     def download_data(self):
@@ -34,35 +37,123 @@ class Data_Humans:
             for row in csv_reader:
                 data_dicts.append(row)
             print(type(row))
+        print(len(data_dicts))
         return data_dicts
 
-    def make_dir_output_file(self,des_fold_path):
-        logging.info('make_dir')
-        os.makedirs(des_fold_path)
 
-    def make_output_file(self, gender = 'male'):
+
+    def add_to_output_file(self ,save_output):
+        with open(self.previous_output, 'w', encoding='utf-8') as csv_output:
+            writer = csv.DictWriter(csv_output, fieldnames=save_output[0].keys())
+            writer.writeheader()
+            writer.writerows(save_output)
+
+    def filter_by_gender(self, gender = 'male'):
         save_output = []
-
         for row in self.data:
+            print(type(row))
             if row['gender'] == gender:
                 save_output.append(deepcopy(row))
-        print(type(save_output))
-        # with open(self.file_out_name, 'wb') as csv_output:
-        #     writer = csv.DictWriter(csv_output, fieldnames=csv_reader)
+        print('type of save_output[0]')
+        print(save_output[0])
+        self.add_to_output_file(save_output)
 
-    def delete_data_file(self):
-        path = 'D:\WinUsers\Lera\Documents\summerlabs\pythonrep\lab 3\file.log'
-        if os.path.isfile(path):
-            os.remove(path)
+    def delete_rows_for_filt(self, numb_of_rows = 4998):
+        if numb_of_rows < 5000:
+            buf_list = self.data.copy()
+            del buf_list[0:numb_of_rows]
+            print(len(buf_list))
         else:
-            print('Path is not a file')
+            print('too big numb')
+
+        self.add_to_output_file(buf_list)
+
+    def read_data_from_file(self):
+        data_dicts = []
+        with open(self.previous_output, 'r', encoding='utf-8') as file:
+            csv_reader = csv.DictReader(file)
+            for row in csv_reader:
+                data_dicts.append(row)
+        return data_dicts
+    def numbering_rows(self):
+        self.data = self.read_data_from_file()
+        counter = 1
+        for row in self.data:
+            row['global_index'] = counter
+            counter += 1
+        print(self.data)
+        print(len(self.data))
+
+    def current_time_for_file(self):
+        for row in self.data:
+            print(row['location.timezone.offset'])
+            list_t = row['location.timezone.offset'].split(':')
+            hourt = int(list_t[0])
+            minutet = int(list_t[1])
+            cur_time = datetime.now() + timedelta(hours= hourt, minutes=minutet)
+            print(cur_time)
+            row['location.timezone.offset'] = cur_time.strftime('%m-%d-%y , %H:%M:%S')
+            print(row['location.timezone.offset'])
+
+    def change_name_title(self):
+        for row in self.data:
+            if row['name.title'] == 'Mrs':
+                row['name.title'] = 'missis'
+            elif row['name.title'] == 'Ms':
+                row['name.title'] = 'mister'
+            elif row['name.title'] == 'Madame':
+                row['name.title'] = 'mademoiselle'
+        print(self.data)
+
+    def convert_datatime(self, name_row, parse_type, output_type):
+        for row in self.data:
+            first_data = datetime.strptime(row[name_row], parse_type)
+            print(type(first_data))
+            output_time = first_data.strftime(output_type)
+            print(output_time)
+            row[name_row] = output_time
+
+
+    def add_fields_to_file(self):
+        self.numbering_rows()
+        self.current_time_for_file()
+        self.change_name_title()
+        self.convert_datatime('registered.date', '%Y-%m-%dT%H:%M:%S.%fZ', '%m-%d-%y , %H:%M:%S')
+        self.convert_datatime('dob.date', '%Y-%m-%dT%H:%M:%S.%fZ', '%m/%d/%y')
+        print(self.data)
+
+    def file_replace(self):
+        if os.path.exists(self.file_out_name) == False:
+            os.makedirs(self.file_out_name)
+            os.replace(self.previous_output, self.file_out_name)
+        else:
+            self.file_out_name = 'D:\WinUsers\Lera\Documents\summerlabs\pythonrep\lab 3\roror\ ' + self.previous_output + '.csv'
+            os.replace(self.previous_output, self.file_out_name)
+
+    # def write_file_in_strange_structure(self):
+    #     with open('structured_file.txt', 'w', encoding='utf-8') as txt_file:
+            # writer = csv.DictWriter(csv_output, fieldnames=save_output[0].keys())
+            # writer.writeheader()
+            # writer.writerows(save_output)
+
+    # def make_dir_output_file(self,des_fold_path):
+    #     logging.info('make_dir')
+    #     os.makedirs(des_fold_path)
+
+
+# def delete_data_file(self):
+    #     path = 'D:\WinUsers\Lera\Documents\summerlabs\pythonrep\lab 3\file.log'
+    #     if os.path.isfile(path):
+    #         os.remove(path)
+    #     else:
+    #         print('Path is not a file')
 
 
 
 # print('optional positional argument -- log_level')
 # log_lev = input()
 # 3 provide following parmetrs (взять один инпут и стрингой записать кучу переменных и их потом распарсить - надо потом попробовать)
-print('Destination folder ')#D:\WinUsers\Lera\Documents\summerlabs\pythonrep\lab 3\fortry
+print('Destination folder new ')#D:\WinUsers\Lera\Documents\summerlabs\pythonrep\lab 3\fortry
 folder_path = input()
 print('Filename ')
 inp_file_name = input()
@@ -70,10 +161,13 @@ inp_file_name = input()
 # gender_filt = input()
 # print('number of rows to filter by')
 # numb_of_filter = input()
-
+#filt_type = input()
 output_file = Data_Humans(folder_path, inp_file_name)
-output_file.make_output_file()
-
+# if type(filt_type) == str
+#output_file.filter_by_gender()
+output_file.delete_rows_for_filt()
+output_file.add_fields_to_file()
+output_file.file_replace()
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
     print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
