@@ -5,6 +5,9 @@ import os
 from copy import deepcopy
 from datetime import datetime, date, time, timedelta
 import time as t
+from statistics import mean
+import collections
+import shutil
 
 logging.basicConfig(filename='file.log',
                     level=logging.INFO,
@@ -58,7 +61,7 @@ class Data_Humans:
         print(save_output[0])
         self.add_to_output_file(save_output)
 
-    def delete_rows_for_filt(self, numb_of_rows = 4998):
+    def delete_rows_for_filt(self, numb_of_rows = 4900):
         if numb_of_rows < 5000:
             buf_list = self.data.copy()
             del buf_list[0:numb_of_rows]
@@ -124,12 +127,67 @@ class Data_Humans:
 
     def file_replace(self):
         if os.path.exists(self.file_out_name) == False:
-            os.makedirs(self.file_out_name)
+            os.makedirs(self.des_fold_path, mode=777)
             os.replace(self.previous_output, self.file_out_name)
         else:
-            self.file_out_name = 'D:\WinUsers\Lera\Documents\summerlabs\pythonrep\lab 3\roror\ ' + self.previous_output + '.csv'
+            self.file_out_name = 'D:\WinUsers\Lera\Documents\summerlabs\pythonrep\lab 3\ ' + self.previous_output + '.csv'
             os.replace(self.previous_output, self.file_out_name)
 
+    def struct_data(self):
+        user = {}
+        for i in self.data:
+            buff = i['dob.date'].split('/')
+            decade = f'{(int(buff[2]) // 10) * 10}-th'
+            user.setdefault(decade, {})#{страны}
+
+            country = i['location.country']
+            user[decade].setdefault(country, [])
+            user[decade][country].append(i)
+        print(user)
+        return(user)
+
+    def the_most_old(self, user):  # использовать max lst
+        return max([f['dob.age'] for f in user])
+
+    def average_year_of_reg(self, user):
+        return mean([int(inp['registered.age']) for inp in user])
+
+    def popular_genres(self, user_data):
+        lst_for_count = [f['id.name'] for f in user_data ]
+        return collections.Counter(lst_for_count).most_common(1)[0][0]
+
+    def make_dir_for_decade(self, user_data):
+        print(type(user_data))
+        for i in user_data:
+            print(user_data[i])
+            os.makedirs(self.des_fold_path + '\\' + i)
+            for c in user_data[i]:
+                print(c)
+                os.makedirs(self.des_fold_path + '\\' + i + '\\' + c)
+                # for user in user_data[i][c]:
+                with open(self.des_fold_path + '\\' + i + '\\' + c + '\\' + 'max_age_' + str(self.the_most_old(user_data[i][c])) + '_avg_registered_' + str(self.average_year_of_reg(user_data[i][c])) + '_ popular_id_'+ str(self.popular_genres(user_data[i][c])) + '_user_data_' + str(user_data[i][c][0]['global_index']) + '.csv', 'w', encoding='utf-8') as csv_output:
+                    writer = csv.DictWriter(csv_output, fieldnames=user_data[i][c][0].keys())
+                    writer.writeheader()
+                    writer.writerows(user_data[i][c])
+                    logging.info(self.des_fold_path + '\\' + i + '\\' + c + '\\' + 'max_age_' + str(self.the_most_old(user_data[i][c])) + '_avg_registered_' + str(self.average_year_of_reg(user_data[i][c])) + '_ popular_id_'+ str(self.popular_genres(user_data[i][c])) + '_user_data_' + str(user_data[i][c][0]['global_index']))
+
+
+    def remove_data_before(self):
+        lsdir = os.listdir(self.des_fold_path)
+        print('fweubfcuewi')
+        for file in lsdir:
+            list_t = file.split('-')
+            if ((int(list_t[0]))//10) in range(3,6):
+                # print(self.des_fold_path + '\\' + file)
+                shutil.rmtree(self.des_fold_path + '\\' + file)
+
+    # def for_logging_struct(self):
+    #     print(os.walk(self.des_fold_path))
+
+    def zip_maker(self):
+        print(shutil.make_archive(self.des_fold_path, 'zip', 'D:\WinUsers\Lera\Documents\summerlabs\pythonrep\lab 3'))
+
+# os.walk() for logs
     # def write_file_in_strange_structure(self):
     #     with open('structured_file.txt', 'w', encoding='utf-8') as txt_file:
             # writer = csv.DictWriter(csv_output, fieldnames=save_output[0].keys())
@@ -153,7 +211,7 @@ class Data_Humans:
 # print('optional positional argument -- log_level')
 # log_lev = input()
 # 3 provide following parmetrs (взять один инпут и стрингой записать кучу переменных и их потом распарсить - надо потом попробовать)
-print('Destination folder new ')#D:\WinUsers\Lera\Documents\summerlabs\pythonrep\lab 3\fortry
+print('Destination folder new ')#D:\WinUsers\Lera\Documents\summerlabs\pythonrep\lab 3\strang
 folder_path = input()
 print('Filename ')
 inp_file_name = input()
@@ -167,14 +225,9 @@ output_file = Data_Humans(folder_path, inp_file_name)
 #output_file.filter_by_gender()
 output_file.delete_rows_for_filt()
 output_file.add_fields_to_file()
-output_file.file_replace()
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+# user_data = output_file.file_replace()
+user_data = output_file.struct_data()
+output_file.make_dir_for_decade(user_data)
+output_file.remove_data_before()
+# output_file.for_logging_struct()
+output_file.zip_maker()
