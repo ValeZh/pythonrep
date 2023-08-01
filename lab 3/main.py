@@ -2,7 +2,6 @@ import logging
 import requests
 import csv
 import os
-from copy import deepcopy
 from datetime import datetime, timedelta
 from statistics import mean
 import collections
@@ -51,12 +50,7 @@ class Data_Humans:
 
     def filter_by_gender(self, gender='male'):
         logging.info('filter by gender')
-        # save_output = [row for row in self.data if row['gender'] == gender]
-        save_output = []
-        for row in self.data:
-            if row['gender'] == gender:
-                save_output.append(deepcopy(row))
-        self.add_to_output_file(save_output)
+        self.add_to_output_file([row for row in self.data if row['gender'] == gender])
 
     def delete_rows_for_filt(self, numb_of_rows=4900):
         logging.info('delete rows filter')
@@ -66,17 +60,14 @@ class Data_Humans:
             print(len(buf_list))
         else:
             print('too big numb')
-
         self.add_to_output_file(buf_list)
 
     def read_data_from_file(self):
         logging.info('4. Read the file and filter data ')
-        data_dicts = []
+        # data_dicts = []
         with open(self.previous_output, 'r', encoding='utf-8') as file:
             csv_reader = csv.DictReader(file)
-            for row in csv_reader:
-                data_dicts.append(row)
-        return data_dicts
+        return[row for row in csv_reader]
 
     def numbering_rows(self):
         logging.info('5.1 add global_index ')
@@ -85,20 +76,15 @@ class Data_Humans:
         for row in self.data:
             row['global_index'] = counter
             counter += 1
-        # print(self.data)
-        # print(len(self.data))
 
     def current_time_for_file(self):
         logging.info('5.2 add current time')
         for row in self.data:
-            # print(row['location.timezone.offset'])
             list_t = row['location.timezone.offset'].split(':')
             hourt = int(list_t[0])
             minutet = int(list_t[1])
             cur_time = datetime.now() + timedelta(hours=hourt, minutes=minutet)
-            # print(cur_time)
             row['location.timezone.offset'] = cur_time.strftime('%m-%d-%y , %H:%M:%S')
-            # print(row['location.timezone.offset'])
 
     def change_name_title(self):
         logging.info('5.3 change_name_title')
@@ -109,15 +95,12 @@ class Data_Humans:
                 row['name.title'] = 'mister'
             elif row['name.title'] == 'Madame':
                 row['name.title'] = 'mademoiselle'
-        # print(self.data)
 
     def convert_datatime(self, name_row, parse_type, output_type):
         logging.info('convert datatime')
         for row in self.data:
             first_data = datetime.strptime(row[name_row], parse_type)
-            # print(type(first_data))
             output_time = first_data.strftime(output_type)
-            # print(output_time)
             row[name_row] = output_time
 
     def add_fields_to_file(self):
@@ -126,7 +109,6 @@ class Data_Humans:
         self.change_name_title()
         self.convert_datatime('registered.date', '%Y-%m-%dT%H:%M:%S.%fZ', '%m-%d-%y , %H:%M:%S')
         self.convert_datatime('dob.date', '%Y-%m-%dT%H:%M:%S.%fZ', '%m/%d/%y')
-        # print(self.data)
 
     def file_replace(self):
         logging.info('7. Move initial file to the destination folder')
@@ -149,7 +131,7 @@ class Data_Humans:
             user[decade].setdefault(country, [])
             user[decade][country].append(i)
         print(user)
-        return (user)
+        return user
 
     def the_most_old(self, user):  # использовать max lst
         print([int(f['dob.age']) for f in user])
@@ -163,16 +145,12 @@ class Data_Humans:
         return collections.Counter(lst_for_count).most_common(1)[0][0]
 
     def make_dir_for_decade(self, user_data):
-        # print(type(user_data))
-        names_for_path = []
         for i in user_data:
             os.makedirs(self.des_fold_path + '\\' + i)
             logging.info(self.des_fold_path + '\\' + i)
-            # names_for_path.insert(i)
             for c in user_data[i]:
                 os.makedirs(self.des_fold_path + '\\' + i + '\\' + c)
                 logging.info(self.des_fold_path + '\\' + i + '\\' + c)
-                # names_for_path.insert(c)
                 with open(self.des_fold_path + '\\' + i + '\\' + c + '\\' + 'max_age_' + str(
                         self.the_most_old(user_data[i][c])) + '_avg_registered_' + str(
                     self.average_year_of_reg(user_data[i][c])) + '_ popular_id_' + str(
@@ -185,20 +163,16 @@ class Data_Humans:
                         self.the_most_old(user_data[i][c])) + '_avg_registered_' + str(
                         self.average_year_of_reg(user_data[i][c])) + '_ popular_id_' + str(
                         self.popular_genres(user_data[i][c])) + '_user_data_' + str(user_data[i][c][0]['global_index']))
-                    # names_for_path.insert(user_data[i][c])
 
     def remove_data_before(self):
         lsdir = os.listdir(self.des_fold_path)
-        # print('fweubfcuewi')
         for file in lsdir:
             list_t = file.split('-')
             if list_t[0] != self.previous_output and (((int(list_t[0])) // 10) in range(3, 6)):
-                # print(self.des_fold_path + '\\' + file)
                 shutil.rmtree(self.des_fold_path + '\\' + file)
 
     def for_logging_struct(self):
         tree = list(os.walk(self.des_fold_path, topdown=True, onerror=None, followlinks=False))
-        # print(tree)
         counter = 1
         buff = 1
         for i in tree[0][1]:
