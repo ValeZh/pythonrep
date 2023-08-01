@@ -3,8 +3,7 @@ import requests
 import csv
 import os
 from copy import deepcopy
-from datetime import datetime, date, time, timedelta
-import time as t
+from datetime import datetime, timedelta
 from statistics import mean
 import collections
 import shutil
@@ -28,7 +27,6 @@ class Data_Humans:
         self.previous_output = f_name + '.csv'
         self.file_out_name = des_fold_path + "\\" + f_name + '.csv'
         self.data = self.download_data()
-        # self.make_dir_output_file(des_fold_path)
         print(self.file_out_name)
         logging.info('Made class : set 	Destination folder and  Filename  ')
 
@@ -53,13 +51,11 @@ class Data_Humans:
 
     def filter_by_gender(self, gender='male'):
         logging.info('filter by gender')
+        # save_output = [row for row in self.data if row['gender'] == gender]
         save_output = []
         for row in self.data:
-            # print(type(row))
             if row['gender'] == gender:
                 save_output.append(deepcopy(row))
-        # print('type of save_output[0]')
-        # print(save_output[0])
         self.add_to_output_file(save_output)
 
     def delete_rows_for_filt(self, numb_of_rows=4900):
@@ -146,19 +142,17 @@ class Data_Humans:
         user = {}
         for i in self.data:
             buff = i['dob.date'].split('/')
-            decade = f'{(int(buff[2]) // 10) * 10}-th'
+            decade = f'{int((int(buff[2])) / 10) * 10}-th'
             user.setdefault(decade, {})  # {страны}
 
             country = i['location.country']
             user[decade].setdefault(country, [])
             user[decade][country].append(i)
-        # print(user)
+        print(user)
         return (user)
 
     def the_most_old(self, user):  # использовать max lst
         print([int(f['dob.age']) for f in user])
-        logging.DEBUG([int(f['dob.age']) for f in user])
-        logging.DEBUG(max([int(f['dob.age']) for f in user]))
         return max([int(f['dob.age']) for f in user])
 
     def average_year_of_reg(self, user):
@@ -246,7 +240,7 @@ if answer == 'rows':
     output_file.delete_rows_for_filt(int(input()))
 
 output_file.add_fields_to_file()
-user_data = output_file.file_replace()
+output_file.file_replace()
 user_data = output_file.struct_data()
 output_file.make_dir_for_decade(user_data)
 output_file.remove_data_before()
