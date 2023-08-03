@@ -191,12 +191,12 @@ class Data_Humans:
 
     def zip_maker(self):
         logging.info('14 make zip')
-        shutil.make_archive(self.des_fold_path, 'zip', 'D:\WinUsers\Lera\Documents\summerlabs\pythonrep\lab 3')
+        shutil.make_archive(self.des_fold_path, 'zip', '/lab3')
 
 
 # print('optional positional argument -- log_level')
 # log_lev = input()
-print('Destination folder new ')  # D:\WinUsers\Lera\Documents\summerlabs\pythonrep\lab 3\strang
+print('Destination folder new ')  # D:\WinUsers\Lera\Documents\summerlabs\pythonrep\lab3\strang
 folder_path = input()
 print('Filename ')
 inp_file_name = input()
