@@ -43,9 +43,10 @@ def first_positive_line(mass):
         for k in m:
             if k > 0:
                 return ind
+    return None
 
 
-mass = [[0, -1, -2, -1], [0, 7, 4, 67], [0, 0, 0, 0], [0, 2, 2, 2]]
+mass = [[0, -1, -2, -1], [0, 0, 4, 0], [0, 0, 0, 0], [0, 2, 2, 0]]
 
 # var 18
 print(f'zero columns {find_zero_col_in_mass(mass)}')
