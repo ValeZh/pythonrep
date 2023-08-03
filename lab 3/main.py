@@ -145,12 +145,11 @@ class Data_Humans:
         return collections.Counter(lst_for_count).most_common(1)[0][0]
 
     def make_dir_for_decade(self, user_data):
+        logging.info('9. 10 . make dir for decade')
         for i in user_data:
             os.makedirs(self.des_fold_path + '\\' + i)
-            logging.info(self.des_fold_path + '\\' + i)
             for c in user_data[i]:
                 os.makedirs(self.des_fold_path + '\\' + i + '\\' + c)
-                logging.info(self.des_fold_path + '\\' + i + '\\' + c)
                 with open(self.des_fold_path + '\\' + i + '\\' + c + '\\' + 'max_age_' + str(
                         self.the_most_old(user_data[i][c])) + '_avg_registered_' + str(
                     self.average_year_of_reg(user_data[i][c])) + '_ popular_id_' + str(
@@ -159,12 +158,9 @@ class Data_Humans:
                     writer = csv.DictWriter(csv_output, fieldnames=user_data[i][c][0].keys())
                     writer.writeheader()
                     writer.writerows(user_data[i][c])
-                    logging.info(self.des_fold_path + '\\' + i + '\\' + c + '\\' + 'max_age_' + str(
-                        self.the_most_old(user_data[i][c])) + '_avg_registered_' + str(
-                        self.average_year_of_reg(user_data[i][c])) + '_ popular_id_' + str(
-                        self.popular_genres(user_data[i][c])) + '_user_data_' + str(user_data[i][c][0]['global_index']))
 
     def remove_data_before(self):
+        logging.info('12.	Remove the data before 1960-th')
         lsdir = os.listdir(self.des_fold_path)
         for file in lsdir:
             list_t = file.split('-')
@@ -172,6 +168,7 @@ class Data_Humans:
                 shutil.rmtree(self.des_fold_path + '\\' + file)
 
     def for_logging_struct(self):
+        logging.info('12 logging data in struct')
         tree = list(os.walk(self.des_fold_path, topdown=True, onerror=None, followlinks=False))
         counter = 1
         buff = 1
@@ -193,6 +190,7 @@ class Data_Humans:
         logging.info('\n }')
 
     def zip_maker(self):
+        logging.info('14 make zip')
         shutil.make_archive(self.des_fold_path, 'zip', 'D:\WinUsers\Lera\Documents\summerlabs\pythonrep\lab 3')
 
 
