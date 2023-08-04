@@ -11,8 +11,8 @@ from copy import deepcopy
 class Films:
     def __init__(self, numb_page):
         self.header = {
-            "accept": "application/json",
-            "Authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIzMTI3NGFmYTRlNTUyMjRjYzRlN2Q0NmNlMTNkOTZjOSIsInN1YiI6IjVkNmZhMWZmNzdjMDFmMDAxMDU5NzQ4OSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.lbpgyXlOXwrbY0mUmP-zQpNAMCw_h-oaudAJB6Cn5c8"
+            'accept': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIzMTI3NGFmYTRlNTUyMjRjYzRlN2Q0NmNlMTNkOTZjOSIsInN1YiI6IjVkNmZhMWZmNzdjMDFmMDAxMDU5NzQ4OSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.lbpgyXlOXwrbY0mUmP-zQpNAMCw_h-oaudAJB6Cn5c8'
         }
         self.page = numb_page
         self.films = []
@@ -47,12 +47,10 @@ class Films:
             'overview']]
 
     def collection_of_genres(self):  # use comprehension return в одну строку без создания переменной
-        answer_collect = frozenset(n for f in self.films for n in f['genre_ids'])
-        return answer_collect
+        return frozenset(n for f in self.films for n in f['genre_ids'])
 
     def delete_film_with_genre(self, id_genre_del):  # comprehension или filter
-        result = [f for f in self.films if int(id_genre_del) not in f['genre_ids']]
-        return result
+        return [f for f in self.films if int(id_genre_del) not in f['genre_ids']]
 
     def popular_genres(self):
         lst_for_count = [ids for f in self.films for ids in f['genre_ids']]
