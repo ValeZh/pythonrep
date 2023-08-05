@@ -8,7 +8,6 @@ import collections
 import shutil
 import argparse
 
-
 logging.basicConfig(filename='file.log',
                     level=logging.INFO,
                     format='%(asctime)s:%(levelname)s:%(name)s:%(message)s')
@@ -26,7 +25,7 @@ class DataHumans:
         self.data_file = 'lab3.csv'
         self.des_fold_path = des_fold_path
         self.previous_output = f_name + '.csv'
-        self.file_out_name = os.path.join(des_fold_path, f'{f_name }.csv')
+        self.file_out_name = os.path.join(des_fold_path, f'{f_name}.csv')
         self.data = self.download_data()
         logging.info('Made class : set 	Destination folder and  Filename  ')
 
@@ -174,13 +173,20 @@ parser.add_argument('file_name', type=str)
 parser.add_argument('-g', '--gender_filt', type=str)
 parser.add_argument('-n', '--numb_of_rows_filt', type=int)
 parser.add_argument('--log_level', type=str)
-# print('optional positional argument -- log_level')
 args = parser.parse_args()
 output_file = DataHumans(args.destination_folder, args.file_name)
 if args.numb_of_rows_filt is True:
     output_file.delete_rows_for_filt(args.numb_of_rows_filt)
 else:
     output_file.filter_by_gender(args.gender_filt)
+
+output_file.add_fields_to_file()
+output_file.file_replace()
+user_data = output_file.struct_data()
+output_file.make_dir_for_decade(user_data)
+output_file.remove_data_before()
+output_file.for_logging_struct()
+# output_file.zip_maker()
 
 # log_lev = input()
 # print('Destination folder new ')  # D:\WinUsers\Lera\Documents\summerlabs\pythonrep\lab3\strang
@@ -198,10 +204,5 @@ else:
 #     print('print numb of delete rows')
 #     output_file.delete_rows_for_filt(int(input()))
 
-output_file.add_fields_to_file()
-output_file.file_replace()
-user_data = output_file.struct_data()
-output_file.make_dir_for_decade(user_data)
-output_file.remove_data_before()
-output_file.for_logging_struct()
-# output_file.zip_maker()
+
+
