@@ -12,14 +12,6 @@ logging.basicConfig(filename='file.log',
                     level=logging.INFO,
                     format='%(asctime)s:%(levelname)s:%(name)s:%(message)s')
 
-logging.debug('Debug message')
-logging.info('Info message')
-logging.warning('Warning message')
-logging.error('Error message')
-logging.critical('Critical message')
-logging.info('1 step')
-
-
 class DataHumans:
     def __init__(self, des_fold_path, f_name='output.csv'):
         self.data_file = 'lab3.csv'
