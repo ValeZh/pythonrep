@@ -1,0 +1,21 @@
+Title,Popularity,Score,Last_day_in_cinema
+Pan Samochodzik i templariusze,1050.4,6,2023-09-06 00:00:00
+Knights of the Zodiac,1336.6,6,2023-06-22 00:00:00
+Warhorse One,1879.4,6,2023-08-25 00:00:00
+The Little Mermaid,2078.2,6,2023-07-13 00:00:00
+The Flash,5930.1,6,2023-08-08 00:00:00
+The Out-Laws,840.4,6,2023-09-01 00:00:00
+Bird Box Barcelona,985.9,6,2023-09-08 00:00:00
+Elemental,1106.1,7,2023-08-09 00:00:00
+John Wick: Chapter 4,1130.0,7,2023-05-17 00:00:00
+The Super Mario Bros. Movie,1134.7,7,2023-05-31 00:00:00
+Fast X,2017.6,7,2023-07-12 00:00:00
+Мавка: Лісова пісня,2211.9,7,2023-04-27 00:00:00
+"Ruby Gillman, Teenage Kraken",2776.7,7,2023-08-23 00:00:00
+Transformers: Rise of the Beasts,5458.2,7,2023-08-01 00:00:00
+Barbie,6058.2,7,2023-09-13 00:00:00
+The Darkest Minds,792.4,7,2018-09-19 00:00:00
+Spider-Man: Across the Spider-Verse,1134.0,8,2023-07-26 00:00:00
+Sound of Freedom,1310.6,8,2023-08-28 00:00:00
+Oppenheimer,1449.3,8,2023-09-13 00:00:00
+Guardians of the Galaxy Vol. 3,2446.6,8,2023-06-28 00:00:00
