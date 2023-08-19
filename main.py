@@ -7,6 +7,7 @@ def find_zero_col_in_mass(mass):
     return count_col
 
 
+
 def find_long_line_mass(mass):
     count = 0
     buff = None
