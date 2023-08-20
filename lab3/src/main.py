@@ -9,11 +9,12 @@ main.py --destination_folder='D:\WinUsers\Lera\Documents\summerlabs\pythonrep\la
 
 # использовать argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("--destination_folder", type=str, required=True)
-parser.add_argument("--file_name", type=str, required=True)
-parser.add_argument("-g", "--gender_filt", type=str)
-parser.add_argument("-n", "--numb_of_rows_filt", type=int)
-parser.add_argument("--log_level", type=str)
+parser.add_argument("destination_folder", type=str, required=True)
+parser.add_argument("file_name", type=str, required=True)
+parser.add_argument("gender_filt", type=str)
+group = parser.add_mutually_exclusive_group()
+group.add_argument("--numb_of_rows_filt", type=int)
+group.add_argument("--log_level", type=str)
 args = parser.parse_args()
 
 import pdb
@@ -21,10 +22,7 @@ import pdb
 pdb.set_trace()
 
 output_file = DataHumans(args.destination_folder, args.file_name)
-if args.numb_of_rows_filt is True:
-    output_file.delete_rows_for_filt(args.numb_of_rows_filt)
-else:
-    output_file.filter_by_gender(args.gender_filt)
+output_file.delete_rows_for_filt(args.numb_of_rows_filt) if args.numb_of_rows_filt else output_file.filter_by_gender(args.gender_filt)
 
 output_file.add_fields_to_file()
 output_file.file_replace()

@@ -16,26 +16,28 @@ logging.basicConfig(
 
 
 class DataHumans:
-    def __init__(self, des_fold_path, f_name="output.csv"):
-        self.data_file = "../lab3.csv"
+    def __init__(self, des_fold_path, f_name='output.csv'):
+        self.file_name = f_name
+        self.data_file = '../lab3.csv'
         self.des_fold_path = des_fold_path
-        self.previous_output = f_name + ".csv"
-        self.file_out_name = os.path.join(des_fold_path, f"{f_name}.csv")
+        self.previous_output = f'{f_name}.csv'
+        self.file_out_name = os.path.join(des_fold_path, self.previous_output)
         self.data = self.download_data()
-        logging.info("Made class : set 	Destination folder and  Filename  ")
+        self.encod = 'utf-8'
+        self.url_adress = 'https://randomuser.me/api/?results=5000&format=csv'
+        logging.info('Made class : set 	Destination folder and  Filename  ')
 
     def download_data(self):
-        logging.info("1. Downloading data")
-        respons = requests.get("https://randomuser.me/api/?results=5000&format=csv")
-        with open(self.data_file, mode="w", encoding="utf-8") as file:
+        logging.info('1. Downloading data')
+        respons = requests.get(self.url_adress)
+        with open(self.data_file, mode='w', encoding=self.encod) as file:
             file.write(respons.text)  # context manager
-        with open(self.data_file, "r", encoding="utf-8") as file:
-            data_dicts = list(csv.DictReader(file))
-        logging.info(f"downloading correct ,len of file{len(data_dicts)}")
+        data_dicts = self.read_data_from_file()
+        logging.info(f'downloading correct ,len of file{len(data_dicts)}')
         return data_dicts
 
-    def add_to_output_file(self, save_output):
-        with open(self.previous_output, "w", encoding="utf-8") as csv_output:
+    def add_to_output_file(self, save_output,file_name):
+        with open(file_name, "w", encoding=self.encod) as csv_output:
             writer = csv.DictWriter(csv_output, fieldnames=save_output[0].keys())
             writer.writeheader()
             writer.writerows(save_output)
@@ -44,7 +46,7 @@ class DataHumans:
     def filter_by_gender(self, gender="male"):
         logging.info("filter by gender")
         self.data = [row for row in self.data if row["gender"] == gender]
-        self.add_to_output_file(self.data)
+        self.add_to_output_file(self.data, self.previous_output)
 
     def delete_rows_for_filt(self, numb_of_rows=4900):
         logging.info("delete rows filter")
@@ -52,15 +54,14 @@ class DataHumans:
             self.data = self.data[:numb_of_rows]
         else:
             print("too big numb")
-        self.add_to_output_file(self.data)
+        self.add_to_output_file(self.data, self.previous_output)
 
     def read_data_from_file(self):
         logging.info("4. Read the file and filter data ")
-        with open(self.previous_output, "r", encoding="utf-8") as file:
-            csv_reader = csv.DictReader(file)
-        return [row for row in csv_reader]
+        with open(self.previous_output, "r", encoding=self.encod) as file:
+            return list(csv.DictReader(file))
 
-    def numbering_rows(self, idx, value):
+    def count_row(self, idx, value):
         logging.info("5.1 add global_index ")
         value["global_index"] = idx
 
@@ -88,7 +89,7 @@ class DataHumans:
 
     def add_fields_to_file(self):
         for idx, row in enumerate(self.data):
-            self.numbering_rows(idx, row)
+            self.count_row(idx, row)
             self.current_time_for_file(row)
             self.change_name_title(row)
             self.convert_datatime(
@@ -131,20 +132,15 @@ class DataHumans:
 
     def make_dir_for_decade(self, user_data):
         logging.info("9. 10 . make dir for decade")
-        for i in user_data:
-            for c in user_data[i]:
-                basic_path = f"{self.des_fold_path}\\{i}\\{c}"
+
+        for decade in user_data:
+            for country in user_data[decade]:
+                basic_path = os.path.join(self.des_fold_path, decade, country)
                 os.makedirs(basic_path)  # f-string \\ make variable//make func
-                with open(
-                    self.make_name_of_file(basic_path, user_data[i][c]),
-                    "w",
-                    encoding="utf-8",
-                ) as csv_output:
-                    writer = csv.DictWriter(
-                        csv_output, fieldnames=user_data[i][c][0].keys()
-                    )
-                    writer.writeheader()
-                    writer.writerows(user_data[i][c])
+
+                data_to_write = user_data[decade][country]
+                file_name = self.make_name_of_file(basic_path, data_to_write)
+                self.add_to_output_file(data_to_write, file_name)
 
     def remove_data_before(self):
         logging.info("12.	Remove the data before 1960-th")
