@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from copy import deepcopy
 
 
-
 class Films:
     def __init__(self, numb_page):
         self.header = {
