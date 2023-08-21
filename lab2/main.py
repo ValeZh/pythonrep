@@ -16,6 +16,7 @@ class Films:
         self.genres = []
         self.fetch_data()
         self.fetch_genre()
+        self.fieldnames = ['Title', 'Popularity', 'Score', 'Last_day_in_cinema']
 
     def fetch_data(self):
         for i in range(1, self.page + 1):
@@ -76,17 +77,13 @@ class Films:
 
     def make_collection(self):
         result_lst_dic = [self.make_dict(f) for f in self.films]
-        print(result_lst_dic)
         sorted_list = sorted(result_lst_dic, key=lambda x: (x['Score'], x['Popularity']))
-        print(sorted_list)
         return sorted_list
 
-    @staticmethod
-    def csv_file_maker(coll_dict):
-        with open('lab2.txt', mode='w') as csv_file:
-            fieldnames = ['Title', 'Popularity', 'Score', 'Last_day_in_cinema']
-            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
 
+    def csv_file_maker(self, coll_dict):
+        with open('lab2.txt', mode='w') as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=self.fieldnames)
             writer.writeheader()
             writer.writerows(coll_dict)
 
