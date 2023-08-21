@@ -43,8 +43,7 @@ class Films:
     def finde_name_from_discription(self, word='planet'):  # use comprehension
         # f['original_title'] значение котовые возвращается ( for f in self.films)
         # обычный цикл (if word in f['overview']) если выполняется условие lst_with_word.append(f)????
-        return [f['original_title'] for f in self.films if word in f[
-            'overview']]
+        return [f['original_title'] for f in self.films if word in f['overview']]
 
     def collection_of_genres(self):  # use comprehension return в одну строку без создания переменной
         return frozenset(n for f in self.films for n in f['genre_ids'])
@@ -60,9 +59,8 @@ class Films:
         return most_genre
 
     def group_films_by_genres(self):
-        group_films1 = {(f['original_title'], k['original_title']) for idx, f in enumerate(self.films) for k in self.films[idx:] if
+        return {(f['original_title'], k['original_title']) for idx, f in enumerate(self.films) for k in self.films[idx:] if
                         set(f['genre_ids']) & set(k['genre_ids'])}
-        return group_films1
 
     @staticmethod
     def change_22_for_map(x):  # поменять названия
