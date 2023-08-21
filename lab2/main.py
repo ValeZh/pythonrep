@@ -5,8 +5,6 @@ from datetime import datetime, timedelta
 from copy import deepcopy
 
 
-# from collections import Counter
-
 
 class Films:
     def __init__(self, numb_page):
