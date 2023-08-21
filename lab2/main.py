@@ -41,11 +41,9 @@ class Films:
         return max(self.films, key=lambda x: x['popularity'])['original_title']
 
     def finde_name_from_discription(self, word='planet'):  # use comprehension
-        # f['original_title'] значение котовые возвращается ( for f in self.films)
-        # обычный цикл (if word in f['overview']) если выполняется условие lst_with_word.append(f)????
         return [f['original_title'] for f in self.films if word in f['overview']]
 
-    def collection_of_genres(self):  # use comprehension return в одну строку без создания переменной
+    def collection_of_genres(self):
         return frozenset(n for f in self.films for n in f['genre_ids'])
 
     def delete_film_with_genre(self, id_genre_del):  # comprehension или filter
@@ -63,11 +61,11 @@ class Films:
                         set(f['genre_ids']) & set(k['genre_ids'])}
 
     @staticmethod
-    def change_22_for_map(x):  # поменять названия
+    def change_22_for_map(x):
         x['genre_ids'][0] = 22
         return x
 
-    def copy_data_with_22(self):  # deepcopy + map
+    def copy_data_with_22(self):
         return list(map(self.change_22_for_map, deepcopy(self.films)))
 
     @staticmethod
@@ -80,9 +78,9 @@ class Films:
         return {'Title': title, 'Popularity': popular, 'Score': score, 'Last_day_in_cinema': day}
 
     def make_collection(self):
-        result_lst_dic = [self.make_dict(f) for f in self.films]  # named tuple
+        result_lst_dic = [self.make_dict(f) for f in self.films]
         print(result_lst_dic)
-        sorted_list = sorted(result_lst_dic, key=lambda x: (x['Score'], x['Popularity']))  # сортировка по 2 полям
+        sorted_list = sorted(result_lst_dic, key=lambda x: (x['Score'], x['Popularity']))
         print(sorted_list)
         return sorted_list
 
@@ -96,28 +94,27 @@ class Films:
             writer.writerows(coll_dict)
 
 
-# import pdb;pdb.set_trace()
+
 print('Write number of page')
 page = int(input())
 answer = Films(page)
 
-# # 2 answer
-# print(f'2.	Give a user all data {answer.give_all_data()}')
-# # 3 answers
-# print(f'3.	All data about movies with indexes from 3 till 19 with step 4 {answer.give_data_with_index_3_19()}')
-# # 4 answer
-# print(f'4.	Name of the most popular title {answer.the_most_popular()}')
-# # 5 answer
-# word = input()
-# print(
-#     f'5.	Names of titles which has in description key words which a user put as parameters {answer.finde_name_from_discription(word)}')
-# # 6 answer
-# print(answer.collection_of_genres())
-# # 7 answer
-# id_genre = input()
-# print(f'7.	Delete all movies with user provided genre{answer.delete_film_with_genre(id_genre)}')
-# # 8 answer
-# # print(f'8.	Names of most popular genres with numbers of time they appear in the data {answer.popular_genres()}')
+# 2 answer
+print(f'2.	Give a user all data {answer.give_all_data()}')
+# 3 answers
+print(f'3.	All data about movies with indexes from 3 till 19 with step 4 {answer.give_data_with_index_3_19()}')
+# 4 answer
+print(f'4.	Name of the most popular title {answer.the_most_popular()}')
+# 5 answer
+word = input()
+print(f'5.	Names of titles which has in description key words which a user put as parameters {answer.finde_name_from_discription(word)}')
+# 6 answer
+print(answer.collection_of_genres())
+# 7 answer
+id_genre = input()
+print(f'7.	Delete all movies with user provided genre{answer.delete_film_with_genre(id_genre)}')
+# 8 answer
+# print(f'8.	Names of most popular genres with numbers of time they appear in the data {answer.popular_genres()}')
 # 9 answer
 print(f'9.	Collection of film titles grouped in pairs by common genres{answer.group_films_by_genres()}')
 # 10 answer
