@@ -24,7 +24,7 @@ class Films:
         for i in range(1, self.page + 1):
             respons = requests.get(
                 f'https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&sort_by=popularity.desc&page={i}',
-                headers=self.header)  # возвращает json с данными
+                headers=self.header)
             self.films.extend(respons.json()['results'])
 
     def fetch_genre(self):
@@ -37,16 +37,16 @@ class Films:
     def give_data_with_index_3_19(self):
         return self.films[3:19:4]
 
-    def the_most_popular(self):  # использовать max lst
+    def the_most_popular(self):
         return max(self.films, key=lambda x: x['popularity'])['original_title']
 
-    def finde_name_from_discription(self, word='planet'):  # use comprehension
+    def finde_name_from_discription(self, word='planet'):
         return [f['original_title'] for f in self.films if word in f['overview']]
 
     def collection_of_genres(self):
         return frozenset(n for f in self.films for n in f['genre_ids'])
 
-    def delete_film_with_genre(self, id_genre_del):  # comprehension или filter
+    def delete_film_with_genre(self, id_genre_del):
         return [f for f in self.films if int(id_genre_del) not in f['genre_ids']]
 
     def popular_genres(self):
