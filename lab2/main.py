@@ -114,7 +114,7 @@ print(answer.collection_of_genres())
 id_genre = input()
 print(f'7.	Delete all movies with user provided genre{answer.delete_film_with_genre(id_genre)}')
 # 8 answer
-# print(f'8.	Names of most popular genres with numbers of time they appear in the data {answer.popular_genres()}')
+print(f'8.	Names of most popular genres with numbers of time they appear in the data {answer.popular_genres()}')
 # 9 answer
 print(f'9.	Collection of film titles grouped in pairs by common genres{answer.group_films_by_genres()}')
 # 10 answer
