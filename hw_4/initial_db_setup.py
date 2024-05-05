@@ -1,6 +1,6 @@
 import sqlite3
 
-def create_database(unique_constraint):
+def create_database():
     # Устанавливаем соединение с базой данных
     conn = sqlite3.connect('bank.db')
     c = conn.cursor()
@@ -22,13 +22,13 @@ def create_database(unique_constraint):
                  Datetime TEXT)''')
 
     # Создаем таблицу User
-    if unique_constraint:
-        c.execute('''CREATE TABLE IF NOT EXISTS User (
-                     Id INTEGER PRIMARY KEY,
-                     Name TEXT NOT NULL,
-                     Surname TEXT NOT NULL,
-                     Birth_day TEXT,
-                     Accounts TEXT NOT NULL)''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS User (
+                 Id INTEGER PRIMARY KEY,
+                 Name TEXT NOT NULL UNIQUE,
+                 Surname TEXT NOT NULL UNIQUE,
+                 Birth_day TEXT,
+                 Accounts INTEGER NOT NULL)''')
 
     # Создаем таблицу Account
     c.execute('''CREATE TABLE IF NOT EXISTS Account (

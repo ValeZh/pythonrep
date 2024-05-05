@@ -1,0 +1,6 @@
+user_id,type,account_number,bank_id,currency,amount,status
+1,credit,123456,3,USD,1000,gold
+3,debit,987654,2,USD,500,silver
+5,credit,234567,5,EUR,800,platinum
+2,debit,876543,4,CAD,1200,gold
+4,credit,345678,1,USD,1500,silver
