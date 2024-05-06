@@ -1,7 +1,7 @@
 import sqlite3
 import requests
 import csv
-
+import datetime
 
 def db_connection(func):
     """
@@ -45,7 +45,7 @@ def db_connection(func):
     return wrapper
 
 
-def get_data():
+def get_curency_data():
     api_key = 'fca_live_bYExvWei85B5olF2iitYB6HunpYb8RYaZAw29iWt'
     url = f'https://api.freecurrencyapi.com/v1/latest?apikey={api_key}'
     response = requests.get(url)
@@ -175,10 +175,87 @@ def add_user_by_file(path):
     data = merge_dicts(read_csv_to_dict(path))
     add_user(data["user_name"], data["birthday"], data["accounts"])
 
+
+def convert_currency(currency_values, orig_currency, conv_currency, amount):
+    return round((amount/currency_values[orig_currency]) * currency_values[conv_currency], 2)
+
+
 @db_connection
-def transfer_money(c, bank_sender_name, account_sender_id, bank_receiver_name, account_receiver_id, sent_currency, sent_amount):
-    c.execute("SELECT Amount FROM Account WHERE id = ?", (account_sender_id,))
-    acc_amount = c.fetchone()[0]
+def transfer_money(c, sender_id, receiver_id, sent_currency, sent_amount, transfer_time=0):
+    # берем ключи из апишки с курсом валют (подсказка 'USD': 1)
+    currency_dict = get_curency_data()
+    print()
+    #смотрим есть ли заданая валюта в дикте курса валют
+    if not (any(item == sent_currency for item in dict.keys(currency_dict))):
+        print('Error sent_currency')
+        return 'Error sent_currency'
+    print('valid current success')
+
+    c.execute('''SELECT bank.name AS bank_name
+              FROM account
+              INNER JOIN bank ON account.bank_id = bank.id
+              WHERE account.id = ?''', (sender_id,))
+
+    bank_sender_name = c.fetchone()[0]
+    c.execute('''SELECT bank.name AS bank_name
+                 FROM account
+                 INNER JOIN bank ON account.bank_id = bank.id
+                 WHERE account.id = ?''', (receiver_id,))
+    bank_receiver_name = c.fetchone()[0]
+
+    print(bank_sender_name)
+    print(bank_receiver_name)
+    print('select bank success')
+
+    c.execute("SELECT Amount FROM Account WHERE id IN (? , ?)", (sender_id, receiver_id,))
+    result = c.fetchall()
+    sender_amount = result[0][0]
+    receiver_amount = result[1][0]
+    print('select amount success')
+
+    c.execute("SELECT Currency From Account WHERE id IN (?, ?)", (sender_id, receiver_id,))
+    result = c.fetchall()
+    sender_currency = result[0][0]
+    receiver_currency = result[1][0]
+    print('select Currency success')
+
+    sent_am_in_receiver_cur = sent_amount
+    sent_am_in_sender_cur = sent_amount
+    sender_am_in_sent_cur = 0
+    receiver_am_in_sent_cur = 0
+    #вынести в функцию
+    if sender_currency != sent_currency:
+        sender_am_in_sent_cur = convert_currency(currency_dict, sender_currency, sent_currency, sender_amount)
+        print('sender_am_in_sent_cur', sender_am_in_sent_cur)
+        sent_am_in_sender_cur = convert_currency(currency_dict, sent_currency, sender_currency, sent_amount)
+    if sender_am_in_sent_cur < sent_amount:
+        print('not enough money in the account')
+        return 'not enough money in the account'
+
+
+    if receiver_currency != sent_currency:
+        sent_am_in_receiver_cur = convert_currency(currency_dict, sent_currency, receiver_currency, sent_amount)
+        print(sent_am_in_receiver_cur)
+
+
+    if transfer_time == 0:
+        transfer_time = datetime.datetime.today()
+
+    print(sender_amount)
+    print(sent_am_in_sender_cur)
+    new_sender_amount = sender_amount - sent_am_in_sender_cur
+    print("new_sender_amount", new_sender_amount)
+    new_receiver_amount = receiver_amount + sent_am_in_receiver_cur
+    print("new_receiver_amount",new_receiver_amount)
+
+    change_something('Account', sender_id, 'amount', new_sender_amount)
+    change_something('Account', receiver_id, 'amount', new_receiver_amount)
+
+    c.execute("INSERT INTO BankTransaction(bank_sender_name, account_sender_id, bank_receiver_name, account_receiver_id, sent_currency, sent_amount, datetime) VALUES(?,?,?,?,?,?,?)",
+              (bank_sender_name, sender_id, bank_receiver_name, receiver_id, sent_currency, sent_amount, transfer_time,))
+
+    return 'success'
+
     # узнать кол во дененег и валюту у человека на акаунте
     # если валюта у отправителя и получателя разные то конвертировать валюту отправителя и получателя и сохранить в переменных
     # сравнивать с отправляемой если меньше уходить из функции
