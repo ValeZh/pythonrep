@@ -103,8 +103,7 @@ def add_bank(c, bank_data):
 @db_connection
 def add_user(c, user_name, birthday, accounts):
     for i in range(len(user_name)):
-        name = str.split(user_name[i])[0]
-        surname = str.split(user_name[i])[1]
+        name, surname = validate.validate_user_full_name(user_name[i])
         c.execute("INSERT INTO User(name,surname,birth_day,accounts) VALUES(?,?,?,?)",
                   (name, surname, f"{birthday[i]}", accounts[i],))
         print(f"user {name} {surname} added success")
@@ -115,19 +114,23 @@ def add_user(c, user_name, birthday, accounts):
 @db_connection
 def add_account_to_db(c, user_id, user_type, acc_numb, bank_id, currency, amount, status):
     for i in range(len(user_id)):
+        # acc_numb = validate.validate_account_number(acc_numb[i])
         c.execute('''INSERT INTO Account(user_id, type, account_number, bank_id, currency, amount, status) 
                 VALUES(?,?,?,?,?,?,?)''',
                   (user_id[i], user_type[i], acc_numb[i], bank_id[i], currency[i], amount[i], status[i]))
         # Получаем количество счетов для текущего пользователя
+
         c.execute("SELECT COUNT(*) FROM Account WHERE user_id = ?", (user_id[i],))
         numb_of_acc = c.fetchone()[0]  # Извлекаем значение из курсора
-        change_something("User", "Accounts", numb_of_acc, user_id[i])
+        #оказалось что это с функцией по какой то причине не работает оставлю так
+        c.execute("UPDATE User SET Accounts = ? WHERE id = ?", (numb_of_acc, user_id[i]))
+
     return 'success'
 
 
 @db_connection
 def change_something(c, table_name, row_id, column, value):
-    c.execute(f"UPDATE {table_name} SET {column} = ? WHERE id = ?", (value, row_id))
+    c.execute(f"UPDATE {table_name} SET {column} = ? WHERE id = ?", (value, row_id, ))
     return 'success'
 
 
@@ -157,9 +160,8 @@ def delete_row_from_bank(c, row_id):
 # она просто очищает таблицы в бд
 @db_connection
 def clear_table(c, table_name):
-    c.execute("DELETE * FROM {}".format(table_name))
+    c.execute(f"DELETE FROM {table_name}")
     return 'success'
-
 
 def add_account_by_file(path):
     data = merge_dicts(read_csv_to_dict(path))

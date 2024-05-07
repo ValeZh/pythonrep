@@ -19,19 +19,22 @@ parser.add_argument('--receiver_id', type=int)
 parser.add_argument('--sent_currency', type=str)
 parser.add_argument('--sent_amount', type=int)
 parser.add_argument('--time', type=str)
+parser.add_argument('--clear_table', type=str)
 args = parser.parse_args()
 
 
 
 #чтоб можно было выполнять несколько функций
 if args.bank_path:
-    api.add_bank_by_file(args.bank_path)
+    print(api.add_bank_by_file(args.bank_path))
 if args.account_path:
-    api.add_account_by_file(args.account_path)
+    print(api.add_account_by_file(args.account_path))
 if args.user_path:
-    api.add_user_by_file(args.user_path)
+    print(api.add_user_by_file(args.user_path))
 if args.table_name and args.row_id and args.column and args.value:
-    api.change_something(args.table_name, args.row_id, args.column, args.value)
+    print(api.change_something(args.table_name, args.row_id, args.column, args.value))
+if args.clear_table:
+    print(api.clear_table(args.clear_table))
 if args.delete_user:
     print(api.delete_row_from_user(args.delete_user))
 if args.delete_account:
@@ -39,9 +42,9 @@ if args.delete_account:
 if args.delete_bank:
     print(api.delete_row_from_bank(args.delete_bank))
 if args.sender_id and args.receiver_id and args.sent_currency and args.sent_amount:
-    api.transfer_money(args.sender_id, args.receiver_id, args.sent_currency, args.sent_amount)
+    print(api.transfer_money(args.sender_id, args.receiver_id, args.sent_currency, args.sent_amount))
 if args.sender_id and args.receiver_id and args.sent_currency and args.sent_amount and args.time:
-    api.transfer_money(args.sender_id, args.receiver_id, args.sent_currency, args.sent_amount, args.time)
+    print(api.transfer_money(args.sender_id, args.receiver_id, args.sent_currency, args.sent_amount, args.time))
 
 #api.add_account_by_file(args.account_path)
 """
