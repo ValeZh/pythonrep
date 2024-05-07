@@ -1,7 +1,8 @@
 import sqlite3
 import requests
 import csv
-import datetime
+import validate
+
 
 def db_connection(func):
     """
@@ -45,6 +46,7 @@ def db_connection(func):
     return wrapper
 
 
+# получает дикт из валют и их значений относительно доллара
 def get_curency_data():
     api_key = 'fca_live_bYExvWei85B5olF2iitYB6HunpYb8RYaZAw29iWt'
     url = f'https://api.freecurrencyapi.com/v1/latest?apikey={api_key}'
@@ -59,7 +61,7 @@ def get_curency_data():
         return None
 
 
-# разобраться и переделать
+# читает цсв файл переобразовывая в дикт
 def read_csv_to_dict(file_path):
     with open(file_path, 'r') as file:
         reader = csv.DictReader(file)
@@ -67,6 +69,7 @@ def read_csv_to_dict(file_path):
     return data_dict
 
 
+# преобразует лист диктов в дикт листов
 def merge_dicts(dict_list):
     merged_dict = {}
     for d in dict_list:
@@ -81,26 +84,22 @@ def merge_dicts(dict_list):
 
 
 # проверяет все ли массивы при ключах имеют одинаковую длинну
+# эта функция сделана для заполнения базы данных с помощью командной строк
+# при желании это можно реализовать
 def equal_length_lists(d):
     lengths = {len(lst) for lst in d.values()}
     return len(lengths) == 1
 
 
+# заполняет таблицу банк
 @db_connection
 def add_bank(c, bank_data):
-    # Add bank to the database
     for bank in bank_data:
         c.execute("INSERT INTO Bank(name) VALUES(?)", (bank,))
     return "Bank added successfully."
 
 
-@db_connection
-def read_data_from_file(previous_output):
-    with open(previous_output, "r", encoding="utf-8") as file:
-        print("read data success")
-        return list(csv.DictReader(file))
-
-
+# заполняет таблицу юзер
 @db_connection
 def add_user(c, user_name, birthday, accounts):
     for i in range(len(user_name)):
@@ -112,16 +111,17 @@ def add_user(c, user_name, birthday, accounts):
     return 'success'
 
 
+# заполняет таблицу аккаунт
 @db_connection
 def add_account_to_db(c, user_id, user_type, acc_numb, bank_id, currency, amount, status):
     for i in range(len(user_id)):
-        c.execute("INSERT INTO Account(user_id, type, account_number, bank_id, currency, amount, status) VALUES(?,?,?,?,?,?,?)",
-                    (user_id[i], user_type[i], acc_numb[i], bank_id[i], currency[i], amount[i], status[i]))
+        c.execute('''INSERT INTO Account(user_id, type, account_number, bank_id, currency, amount, status) 
+                VALUES(?,?,?,?,?,?,?)''',
+                  (user_id[i], user_type[i], acc_numb[i], bank_id[i], currency[i], amount[i], status[i]))
         # Получаем количество счетов для текущего пользователя
         c.execute("SELECT COUNT(*) FROM Account WHERE user_id = ?", (user_id[i],))
         numb_of_acc = c.fetchone()[0]  # Извлекаем значение из курсора
-        # забабахать сюда функцию
-        c.execute("UPDATE User SET Accounts = ? WHERE id = ?", (numb_of_acc, user_id[i]))
+        change_something("User", "Accounts", numb_of_acc, user_id[i])
     return 'success'
 
 
@@ -139,20 +139,22 @@ def delete_row_from_account(c, row_id):
 
 @db_connection
 def delete_row_from_user(c, row_id):
-    # забабахать сюда функцию
-    c.execute(f"DELETE FROM Account WHERE User_id = ?", (row_id, ))
+    # в идеале базы данных должны быть связаны между собой по айди
+    # поэтому чтоб успешно удалить юзера надо еще удалить все записи связаные с ним
+    # это же и касается банка
+    delete_row_from_account(row_id)
     c.execute(f"DELETE FROM User WHERE id = ?", (row_id,))
     return 'success'
 
 
 @db_connection
 def delete_row_from_bank(c, row_id):
-    # забабахать сюда функцию
-    c.execute(f"DELETE FROM Account WHERE Bank_id = ?", (row_id,))
+    delete_row_from_account(row_id)
     c.execute(f"DELETE FROM Bank WHERE id = ?", (row_id,))
     return 'success'
 
 
+# она просто очищает таблицы в бд
 @db_connection
 def clear_table(c, table_name):
     c.execute("DELETE * FROM {}".format(table_name))
@@ -161,7 +163,8 @@ def clear_table(c, table_name):
 
 def add_account_by_file(path):
     data = merge_dicts(read_csv_to_dict(path))
-    add_account_to_db(data["user_id"], data["type"], data["account_number"], data["bank_id"], data["currency"], data["amount"], data["status"])
+    add_account_to_db(data["user_id"], data["type"], data["account_number"],
+                      data["bank_id"], data["currency"], data["amount"], data["status"])
     return "success"
 
 
@@ -181,86 +184,65 @@ def convert_currency(currency_values, orig_currency, conv_currency, amount):
 
 
 @db_connection
-def transfer_money(c, sender_id, receiver_id, sent_currency, sent_amount, transfer_time=0):
+def get_bankname(c, bank_id):
+    c.execute('''SELECT bank.name AS bank_name
+               FROM account
+               INNER JOIN bank ON account.bank_id = bank.id
+               WHERE account.id = ?''', (bank_id,))
+    return c.fetchone()[0]
+
+
+@db_connection
+def get_data_from_table(c, table_name, row_name, row_id):
+    c.execute(f"SELECT {table_name} FROM {row_name} WHERE id = ? ", (row_id,))
+    return c.fetchone()[0]
+
+
+@db_connection
+def transfer_money(c, sender_id, receiver_id, sent_currency, sent_amount, transfer_time=None):
     # берем ключи из апишки с курсом валют (подсказка 'USD': 1)
     currency_dict = get_curency_data()
-    print()
-    #смотрим есть ли заданая валюта в дикте курса валют
-    if not (any(item == sent_currency for item in dict.keys(currency_dict))):
-        print('Error sent_currency')
-        return 'Error sent_currency'
+    # смотрим есть ли заданая валюта в дикте курса валют
+    validate.validate_field_value('sent_currency', sent_currency,  dict.keys(currency_dict))
     print('valid current success')
 
-    c.execute('''SELECT bank.name AS bank_name
-              FROM account
-              INNER JOIN bank ON account.bank_id = bank.id
-              WHERE account.id = ?''', (sender_id,))
-
-    bank_sender_name = c.fetchone()[0]
-    c.execute('''SELECT bank.name AS bank_name
-                 FROM account
-                 INNER JOIN bank ON account.bank_id = bank.id
-                 WHERE account.id = ?''', (receiver_id,))
-    bank_receiver_name = c.fetchone()[0]
-
-    print(bank_sender_name)
-    print(bank_receiver_name)
-    print('select bank success')
-
-    c.execute("SELECT Amount FROM Account WHERE id IN (? , ?)", (sender_id, receiver_id,))
-    result = c.fetchall()
-    sender_amount = result[0][0]
-    receiver_amount = result[1][0]
-    print('select amount success')
-
-    c.execute("SELECT Currency From Account WHERE id IN (?, ?)", (sender_id, receiver_id,))
-    result = c.fetchall()
-    sender_currency = result[0][0]
-    receiver_currency = result[1][0]
-    print('select Currency success')
-
+    # вытаскиваем нужные данные для заполнения таблицы транзакций
+    bank_sender_name = get_bankname(sender_id)
+    bank_receiver_name = get_bankname(receiver_id)
+    sender_amount = get_data_from_table('Amount', 'Account', sender_id)
+    receiver_amount = get_data_from_table('Amount', 'Account', receiver_id)
+    sender_currency = get_data_from_table('Currency', 'Account', sender_id)
+    receiver_currency = get_data_from_table('Currency', 'Account', receiver_id)
     sent_am_in_receiver_cur = sent_amount
     sent_am_in_sender_cur = sent_amount
-    sender_am_in_sent_cur = 0
-    receiver_am_in_sent_cur = 0
-    #вынести в функцию
+    sender_am_in_sent_cur = sender_amount
+
+    # проверяем валюты у отправителя
     if sender_currency != sent_currency:
         sender_am_in_sent_cur = convert_currency(currency_dict, sender_currency, sent_currency, sender_amount)
         print('sender_am_in_sent_cur', sender_am_in_sent_cur)
         sent_am_in_sender_cur = convert_currency(currency_dict, sent_currency, sender_currency, sent_amount)
-    if sender_am_in_sent_cur < sent_amount:
-        print('not enough money in the account')
-        return 'not enough money in the account'
-
-
+    # проверяем достаточно ли денег на счету
+    if sender_am_in_sent_cur <= sent_amount:
+        raise ValueError('not enough money in the account')
+    # проверяем валюты у получателя
     if receiver_currency != sent_currency:
         sent_am_in_receiver_cur = convert_currency(currency_dict, sent_currency, receiver_currency, sent_amount)
-        print(sent_am_in_receiver_cur)
 
+    # проверяем наличие времени
+    transfer_time = validate.add_transaction_time(transfer_time)
 
-    if transfer_time == 0:
-        transfer_time = datetime.datetime.today()
-
-    print(sender_amount)
-    print(sent_am_in_sender_cur)
     new_sender_amount = sender_amount - sent_am_in_sender_cur
-    print("new_sender_amount", new_sender_amount)
     new_receiver_amount = receiver_amount + sent_am_in_receiver_cur
-    print("new_receiver_amount",new_receiver_amount)
 
+    # меняем значения суммы у юзеров
     change_something('Account', sender_id, 'amount', new_sender_amount)
     change_something('Account', receiver_id, 'amount', new_receiver_amount)
 
-    c.execute("INSERT INTO BankTransaction(bank_sender_name, account_sender_id, bank_receiver_name, account_receiver_id, sent_currency, sent_amount, datetime) VALUES(?,?,?,?,?,?,?)",
-              (bank_sender_name, sender_id, bank_receiver_name, receiver_id, sent_currency, sent_amount, transfer_time,))
+    # заполняем таблицу
+    c.execute(
+        '''INSERT INTO BankTransaction(bank_sender_name, account_sender_id, bank_receiver_name, account_receiver_id, 
+        sent_currency, sent_amount, datetime) VALUES(?,?,?,?,?,?,?)''',
+        (bank_sender_name, sender_id, bank_receiver_name, receiver_id, sent_currency, sent_amount, transfer_time,))
 
     return 'success'
-
-    # узнать кол во дененег и валюту у человека на акаунте
-    # если валюта у отправителя и получателя разные то конвертировать валюту отправителя и получателя и сохранить в переменных
-    # сравнивать с отправляемой если меньше уходить из функции
-    # при отправлении
-    # заполнить таблицу транзакций
-    # отнять у отправтеля деньги в таблице аккаунт
-    # прибавить деньги у получателя
-
