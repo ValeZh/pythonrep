@@ -114,7 +114,7 @@ def add_user(c, user_name, birthday, accounts):
 @db_connection
 def add_account_to_db(c, user_id, user_type, acc_numb, bank_id, currency, amount, status):
     for i in range(len(user_id)):
-        # acc_numb = validate.validate_account_number(acc_numb[i])
+        acc_numb[i] = validate.validate_account_number(acc_numb[i])
         c.execute('''INSERT INTO Account(user_id, type, account_number, bank_id, currency, amount, status) 
                 VALUES(?,?,?,?,?,?,?)''',
                   (user_id[i], user_type[i], acc_numb[i], bank_id[i], currency[i], amount[i], status[i]))
