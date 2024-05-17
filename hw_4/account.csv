@@ -1,6 +1,6 @@
 user_id,type,account_number,bank_id,currency,amount,status
 1,credit,ID--dcd-123568744-,3,USD,1000,gold
 3,debit,ID--xyz-987654-uvw,2,USD,500,silver
-5,credit,ID--qwe-456789-asd,5,EUR,800,platinum
+2,credit,ID--qwe-456789-asd,5,EUR,800,platinum
 2,debit,ID--z1-654321-xyz,4,CAD,1200,gold
 4,credit,ID--jkl-987654-mno,1,USD,1500,silver
