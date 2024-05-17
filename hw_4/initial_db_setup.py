@@ -1,16 +1,17 @@
 import sqlite3
 
-def create_database():
-    # Устанавливаем соединение с базой данных
+
+def create_database(unique_name=True, unique_surname=True):
+    # Establishing a connection to the database
     conn = sqlite3.connect('bank.db')
     c = conn.cursor()
 
-    # Создаем таблицу Bank
+    # Create table Bank
     c.execute('''CREATE TABLE IF NOT EXISTS Bank (
                  id INTEGER PRIMARY KEY,
                  name TEXT NOT NULL UNIQUE)''')
 
-    # Создаем таблицу BankTransaction
+    # Create table BankTransaction
     c.execute('''CREATE TABLE IF NOT EXISTS BankTransaction (
                  id INTEGER PRIMARY KEY,
                  Bank_sender_name TEXT NOT NULL,
@@ -21,16 +22,17 @@ def create_database():
                  Sent_Amount REAL NOT NULL,
                  Datetime TEXT)''')
 
-    # Создаем таблицу User
-
-    c.execute('''CREATE TABLE IF NOT EXISTS User (
+    # Create table User
+    name_uniq = "UNIQUE" if unique_name else ""
+    surname_uniq = "UNIQUE" if unique_surname else ""
+    c.execute(f'''CREATE TABLE IF NOT EXISTS User (
                  Id INTEGER PRIMARY KEY,
-                 Name TEXT NOT NULL UNIQUE,
-                 Surname TEXT NOT NULL UNIQUE,
+                 Name TEXT NOT NULL {name_uniq},
+                 Surname TEXT NOT NULL {surname_uniq},
                  Birth_day TEXT,
                  Accounts INTEGER NOT NULL)''')
 
-    # Создаем таблицу Account
+    # Create table Account
     c.execute('''CREATE TABLE IF NOT EXISTS Account (
                  Id INTEGER PRIMARY KEY,
                  User_id INTEGER NOT NULL,
@@ -41,8 +43,5 @@ def create_database():
                  Amount REAL NOT NULL,
                  Status TEXT)''')
 
-    # Фиксируем изменения и закрываем соединение
     conn.commit()
     conn.close()
-
-
