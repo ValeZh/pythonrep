@@ -8,6 +8,7 @@ import logging
 from consts import URL
 from datetime import datetime, timedelta
 import random
+from collections import Counter, defaultdict
 
 formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s:%(message)s')
 my_logger = logging.getLogger('CustomLogger')
@@ -21,7 +22,6 @@ load_dotenv(find_dotenv())
 
 # gets dict from currencies and their values relative to the dollar
 def get_currency_data():
-
     response = requests.get(URL.format(os.getenv('API_KEY')))
     if response.status_code == requests.codes.ok:
         data = response.json()
@@ -40,34 +40,24 @@ def read_csv_to_dict(file_path):
 
 
 def unpack_data(data):
-    keys = list(data.keys())
-    return [data[key] for key in keys] if len(keys) > 1 else data[keys[0]]
+    return data.values()
 
 
-# { filler_date: [{}, {} ]}
-# { "row1": {}, "row2": {} }
-# fills the table bank
+def format_data_string(data):
+    formatted_string = ', '.join(f'{item}' for item in data[0])
+    formatted_string_colon = ', '.join(f':{item}' for item in data[0])
+    return formatted_string, formatted_string_colon
+
+
 @db_connection
-def add_bank(cur, **kwargs):
-    data = unpack_data(kwargs)
-    my_logger.info(data)
-    # unpack the mass of dicts
-    my_logger.info(data)
-    cur.executemany("INSERT INTO Bank(name) VALUES(:Name)", data)  # :param_name, :param_name2
-    my_logger.info("Bank added successfully.")
-
-
-# fills the table user
-@db_connection
-def add_user(cur, **kwargs):
-    data = unpack_data(kwargs)
-    my_logger.info(data)
-    for i in data:
-        i["name"] = validate.validate_user_full_name(i["user_name"])[0]
-        i["surname"] = validate.validate_user_full_name(i["user_name"])[1]
-    cur.executemany("INSERT INTO User(name,surname,birth_day,accounts) VALUES(:name ,:surname,:birthday,:accounts)",
-                    data)
-    my_logger.info("User added successfully.")
+def add_generic_by_path(cur, path, table_name):
+    data = read_csv_to_dict(path)
+    data = validate.username_validate(data)
+    column, form_column = format_data_string(data)
+    cur.executemany(f"INSERT INTO {table_name}({column}) VALUES({form_column})", data)
+    if table_name == "Account":
+        set_accounts(cur, data)
+    my_logger.info(f"{table_name} added successfully.")
 
 
 def unpack_to_string(data):
@@ -79,6 +69,7 @@ def unpack_to_string(data):
 
 
 # fills the table account
+
 def set_accounts(cur, data):
     for i in data:
         cur.execute("SELECT id FROM Account WHERE user_id = ?", (i["user_id"],))
@@ -86,18 +77,6 @@ def set_accounts(cur, data):
         account_str = unpack_to_string(numb_of_acc)
         my_logger.info(account_str)
         cur.execute("UPDATE User SET Accounts = ? WHERE id = ?", (account_str, i["user_id"],))
-
-
-@db_connection
-def add_account(cur, **kwargs):
-    data = unpack_data(kwargs)
-    my_logger.info(data)
-    validate.valid_acc(data)
-    cur.executemany('''INSERT INTO Account(user_id, type, account_number, bank_id, currency, amount, status) 
-            VALUES(:user_id,:type,:account_number,:bank_id,:currency,:amount,:status)''',
-                    data)
-    set_accounts(cur, data)
-    my_logger.info("account added successfully.")
 
 
 # update row in bd
@@ -108,18 +87,34 @@ def update_row(c, table_name, row_id, column, value):
 
 
 @db_connection
-def delete_row(cur, row_id, fnc):
-    match fnc:
-        case "User":
-            cur.execute("DELETE FROM Account WHERE user_id = ?", (row_id,))
-            cur.execute("DELETE FROM User WHERE id = ?", (row_id,))
-        case "Bank":
-            cur.execute("DELETE FROM Account WHERE bank_id = ?", (row_id,))
-            cur.execute("DELETE FROM Bank WHERE id = ?", (row_id,))
-        case "Account":
-            cur.execute("DELETE FROM Account WHERE id = ?", (row_id,))
-    my_logger.info(f"{fnc} delete successfully.")
+def delete_generic(cur, row_id, table_name, second_table=None):
+    if second_table:
+        cur.execute(f"DELETE FROM Account WHERE {table_name.lower()}_id = ?", (row_id,))
+    cur.execute(f"DELETE FROM {table_name} WHERE id = ?", (row_id,))
+    my_logger.info(f"{table_name} delete successfully.")
     return "success"
+
+
+def delete_row(row_id, table_name):
+    match table_name:
+        case "User":
+            delete_user(row_id)
+        case "Bank":
+            delete_bank(row_id)
+        case "Account":
+            delete_account(row_id)
+
+
+def delete_user(row_id):
+    delete_generic(row_id, 'User', True)
+
+
+def delete_bank(row_id):
+    delete_generic(row_id, 'Bank', True)
+
+
+def delete_account(row_id):
+    delete_generic(row_id, 'Account', False)
 
 
 # it just clears the tables in the database
@@ -129,30 +124,19 @@ def clear_table(cur, table_name):
     return 'success'
 
 
-def add_table_by_file(path, table_name):
-    data = read_csv_to_dict(path)
-    match table_name:
-        case "Bank":
-            add_bank(table_filler=data)
-        case "User": 
-            add_user(table_filler=data)
-        case "Account":
-            add_account(table_filler=data)
-
-
 def convert_currency(currency_values, orig_currency, conv_currency, amount):
     return round((amount / currency_values[orig_currency]) * currency_values[conv_currency], 2)
 
 
 def get_bankname(id_user):
-    bank_id = get_data_from_table(table_name="Account", row_name="bank_id", row_id=id_user)
+    bank_id = get_data_from_table(table_name="Account", col_name="bank_id", row_id=id_user)
     my_logger.info("get_bankname successfully.")
-    return get_data_from_table(table_name="Bank", row_name="name",  row_id=bank_id)
+    return get_data_from_table(table_name="Bank", col_name="name", row_id=bank_id)
 
 
 @db_connection
-def get_data_from_table(cur,  row_name, table_name, row_id):
-    cur.execute(f"SELECT {row_name} FROM {table_name} WHERE id = ? ", (row_id,))
+def get_data_from_table(cur, col_name, table_name, row_id):
+    cur.execute(f"SELECT {col_name} FROM {table_name} WHERE id = ? ", (row_id,))
     return cur.fetchone()[0]
 
 
@@ -170,9 +154,17 @@ def insert_transaction(cur, bank_sender_name, sender_id, bank_receiver_name,
                  sender_currency, sent_amount, transfer_time,))
 
 
+def account_valid(sender_amount, sent_amount, sender_currency, receiver_currency, currency_dict, transfer_time):
+    if validate.valid_currency_amount(sender_amount, sent_amount, sender_currency, receiver_currency):
+        sent_amount = convert_currency(currency_dict, receiver_currency, sender_currency, sent_amount)
+    transfer_time = validate.add_transaction_time(transfer_time)
+    return sent_amount, transfer_time
+
+
 def transfer_money(sender_id, receiver_id, sent_amount, transfer_time=None):
     currency_dict = get_currency_data()
     my_logger.info('valid current success')
+
     # pull the necessary data to fill the transaction table
     bank_sender_name = get_bankname(sender_id)
     bank_receiver_name = get_bankname(receiver_id)
@@ -180,22 +172,16 @@ def transfer_money(sender_id, receiver_id, sent_amount, transfer_time=None):
     receiver_amount = get_data_from_table("Amount", "Account", receiver_id)
     sender_currency = get_data_from_table("Currency", "Account", sender_id)
     receiver_currency = get_data_from_table("Currency", "Account", receiver_id)
-    sent_am_in_sender_cur = sent_amount
 
-    if sender_amount <= sent_amount:
-        raise ValueError("not enough money in the account")
-    if receiver_currency != sender_currency:
-        sent_am_in_sender_cur = convert_currency(currency_dict, receiver_currency, sender_currency, sent_amount)
+    sent_amount, transfer_time = account_valid(sender_amount, sent_amount, sender_currency, receiver_currency,
+                                               currency_dict, transfer_time)
 
-    # check the time
-    transfer_time = validate.add_transaction_time(transfer_time)
-
-    new_sender_amount = sender_amount - sent_am_in_sender_cur
-    new_receiver_amount = receiver_amount + sent_am_in_sender_cur
+    new_sender_amount = round(sender_amount - sent_amount, 2)
+    new_receiver_amount = round(receiver_amount + sent_amount, 2)
 
     # change the sum values of the users
-    update_row("Account", sender_id, "amount", round(new_sender_amount, 2))
-    update_row("Account", receiver_id, "amount", round(new_receiver_amount, 2))
+    update_row("Account", sender_id, "amount", new_sender_amount)
+    update_row("Account", receiver_id, "amount", new_receiver_amount)
 
     # fill the table
     insert_transaction(bank_sender_name, sender_id, bank_receiver_name, receiver_id,
@@ -210,9 +196,11 @@ def select_random_users_with_discounts(cursor):
     all_users = cursor.fetchall()
     random_users = random.sample(all_users, min(10, len(all_users)))  # Randomly select up to 10 users
     user_discounts = {}
+    # comprehension use
     for user_id in random_users:
         discount = random.choice([25, 30, 50])  # Randomly choose discount
         user_discounts[user_id[0]] = discount
+        #########################################
         my_logger.info(user_discounts)
         my_logger.info("select_random_users_with_discounts success")
     return user_discounts
@@ -246,6 +234,7 @@ def bank_with_biggest_capital(cursor):
     # Create a dictionary to store the total capital for each bank in dollars
     for bank_id, currency, amount in accounts:
         amount_in_usd = convert_currency(currency_dict, currency, 'USD', amount)
+        # dict.setdefault() .append() .sum() / default_dict /
         if bank_id in bank_capital:
             bank_capital[bank_id] += amount_in_usd
         else:
@@ -266,20 +255,14 @@ def bank_serving_oldest_client(cursor):
     cursor.execute("SELECT User_id, Bank_id FROM Account")
     accounts = cursor.fetchall()
 
-    # Find the oldest user
-    oldest_user_id = None
-    oldest_birth_day = datetime.max
+    oldest_user = min(users, key=lambda user: datetime.strptime(user[1], '%Y-%m-%d'))
+    oldest_user_id = oldest_user[0]
+    # Create a list of user_ids from the accounts
+    user_ids = [user_id for user_id, _ in accounts]
+    # Find the index of the oldest_user_id
+    index = user_ids.index(oldest_user_id)
 
-    for user_id, birth_day in users:
-        birth_date = datetime.strptime(birth_day, '%Y-%m-%d')
-        if birth_date < oldest_birth_day:
-            oldest_birth_day = birth_date
-            oldest_user_id = user_id
-
-    # Find the bank that owns the oldest user
-    for user_id, bank_id in accounts:
-        if user_id == oldest_user_id:
-            return bank_id
+    return accounts[index][1]
 
 
 @db_connection
@@ -294,37 +277,32 @@ def print_table(cursor, table_name):
         print(", ".join(map(str, row)))
 
 
+# bank_2 : set(acc1 acc2)
 @db_connection
 def bank_with_highest_unique_users(cursor):
-    # Create a dictionary to store the number of unique users for each bank
-    unique_users_by_bank = {}
-
-    # Select all transactions from the BankTransaction table
     cursor.execute("SELECT Bank_sender_name, Account_sender_id FROM BankTransaction")
     transactions = cursor.fetchall()
 
-    # Count the number of unique users for each bank
+    unique_users_by_bank = defaultdict(set)
+
     for bank_name, account_id in transactions:
-        if bank_name not in unique_users_by_bank:
-            unique_users_by_bank[bank_name] = set()
         unique_users_by_bank[bank_name].add(account_id)
 
-    # Find the bank with the unique users
-    bank_with_highest_users = max(unique_users_by_bank.items(), key=lambda x: len(x[1]))
+    unique_user_counts = Counter({bank: len(users) for bank, users in unique_users_by_bank.items()})
+
+    bank_with_highest_users = unique_user_counts.most_common(1)[0]
 
     return bank_with_highest_users[0]
 
 
 @db_connection
 def delete_users_with_incomplete_info(cursor):
-    while True:
-        cursor.execute("SELECT id FROM User WHERE Name IS NULL OR Surname IS NULL OR Birth_day IS NULL")
-        result = cursor.fetchone()
-        if result is None:
-            break
+    cursor.execute("SELECT id FROM User WHERE Name IS NULL OR Surname IS NULL OR Birth_day IS NULL")
+    result = cursor.fetchall()
+    for i in result:
         deleted_user_id = result[0]
-        cursor.execute("DELETE FROM Account WHERE User_id = ?", (deleted_user_id,))
-        cursor.execute("DELETE FROM User WHERE id = ?", (deleted_user_id,))
+        delete_user(deleted_user_id)
+
     return "Deletion complete"
 
 

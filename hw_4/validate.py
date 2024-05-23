@@ -12,9 +12,12 @@ def validate_user_full_name(user_full_name):
 
 
 # Validation of fields with a strict set of values
-def validate_field_value(field, value, allowed_values):
+def validate_field_value(field, value, allowed_values, strict = True):
     if value not in allowed_values:
-        raise ValueError("error: not allowed value {} for field {}!".format(value, field))
+        if strict:
+            raise ValueError("error: not allowed value {} for field {}!".format(value, field))
+        return False
+    return True
 
 def valid_acc(data):
     type_values = ["credit", "debit"]
@@ -50,3 +53,19 @@ def add_transaction_time(transaction_time):
     if not transaction_time:
         transaction_time = datetime.now()
     return transaction_time
+
+
+def valid_currency_amount(sender_amount,sent_amount,sender_currency,receiver_currency ):
+    if sender_amount <= sent_amount:
+        raise ValueError("not enough money in the account")
+    if receiver_currency != sender_currency:
+        return True
+
+def username_validate(data):
+    if not validate_field_value("user_name", "user_name", dict.keys(data[0]), False):
+        return data
+    for i in data:
+        i["name"] = validate_user_full_name(i["user_name"])[0]
+        i["surname"] = validate_user_full_name(i["user_name"])[1]
+        del i["user_name"]
+    return data
