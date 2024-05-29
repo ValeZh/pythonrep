@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 import random
 from collections import Counter, defaultdict
 
+
 formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s:%(message)s')
 my_logger = logging.getLogger('CustomLogger')
 my_handler = logging.FileHandler('file.log')
@@ -44,14 +45,16 @@ def unpack_data(data):
 
 
 def format_data_string(data):
-    formatted_string = ', '.join(f'{item}' for item in data[0])
-    formatted_string_colon = ', '.join(f':{item}' for item in data[0])
+    print(data)
+    formatted_string = ', '.join(f'{item}' for item in dict.keys(data[0]))
+    formatted_string_colon = ', '.join(f':{item}' for item in dict.keys(data[0]))
     return formatted_string, formatted_string_colon
 
 
 @db_connection
 def add_generic_by_path(cur, path, table_name):
     data = read_csv_to_dict(path)
+    print(data)
     data = validate.username_validate(data)
     column, form_column = format_data_string(data)
     cur.executemany(f"INSERT INTO {table_name}({column}) VALUES({form_column})", data)
@@ -69,9 +72,9 @@ def unpack_to_string(data):
 
 
 # fills the table account
-
 def set_accounts(cur, data):
     for i in data:
+        # import pdb;pdb.set_trace()
         cur.execute("SELECT id FROM Account WHERE user_id = ?", (i["user_id"],))
         numb_of_acc = cur.fetchall()
         account_str = unpack_to_string(numb_of_acc)
@@ -160,18 +163,23 @@ def account_valid(sender_amount, sent_amount, sender_currency, receiver_currency
     transfer_time = validate.add_transaction_time(transfer_time)
     return sent_amount, transfer_time
 
-
-def transfer_money(sender_id, receiver_id, sent_amount, transfer_time=None):
-    currency_dict = get_currency_data()
-    my_logger.info('valid current success')
-
-    # pull the necessary data to fill the transaction table
+def get_data_by_id(sender_id, receiver_id):
     bank_sender_name = get_bankname(sender_id)
     bank_receiver_name = get_bankname(receiver_id)
     sender_amount = get_data_from_table("Amount", "Account", sender_id)
     receiver_amount = get_data_from_table("Amount", "Account", receiver_id)
     sender_currency = get_data_from_table("Currency", "Account", sender_id)
     receiver_currency = get_data_from_table("Currency", "Account", receiver_id)
+    return bank_sender_name, bank_receiver_name, sender_amount, receiver_amount, sender_currency, receiver_currency
+
+def transfer_money(sender_id, receiver_id, sent_amount, transfer_time=None):
+    currency_dict = get_currency_data()
+    my_logger.info('valid current success')
+
+    # тестировать количество вызовов функции
+    # pull the necessary data to fill the transaction table
+    (bank_sender_name, bank_receiver_name, sender_amount, receiver_amount,
+     sender_currency, receiver_currency) = get_data_by_id(sender_id, receiver_id)
 
     sent_amount, transfer_time = account_valid(sender_amount, sent_amount, sender_currency, receiver_currency,
                                                currency_dict, transfer_time)
@@ -189,12 +197,16 @@ def transfer_money(sender_id, receiver_id, sent_amount, transfer_time=None):
     my_logger.info("success")
     return "success"
 
-
 @db_connection
-def select_random_users_with_discounts(cursor):
+def select_id_from_user(cursor):
     cursor.execute("SELECT Id FROM User")
-    all_users = cursor.fetchall()
+    return cursor.fetchall()
+
+def select_random_users_with_discounts():
+    all_users = select_id_from_user()
+    print(all_users)
     random_users = random.sample(all_users, min(10, len(all_users)))  # Randomly select up to 10 users
+    print(random_users )
     user_discounts = {}
     # comprehension use
     for user_id in random_users:
