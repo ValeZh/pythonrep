@@ -12,7 +12,6 @@ def db_connection(func):
     Returns:
         function: Вложенная функция-обертка, которая обеспечивает соединение и закрытие.
     """
-    # не работает
     @wraps(func)
     def wrapper(*args, **kwargs):
         """

@@ -32,7 +32,7 @@ def init_args():
 def do_func_with_args(args):
     # to be able to perform multiple functions
     if args.add_path and args.table_name:
-        api.add_table_by_file(args.add_path, args.table_name)
+        api.add_generic_by_path(args.add_path, args.table_name)
     if args.table_name and args.row_id and args.column and args.value:
         api.update_row(args.table_name, args.row_id, args.column, args.value)
     if args.clear_table:
@@ -57,7 +57,6 @@ def do_func_with_args(args):
         api.print_table(args.print_table)
     if args.delete_incomplete:
         print(api.delete_users_with_incomplete_info())
-
 
 def main():
     initial_db_setup.create_database()
