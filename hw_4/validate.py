@@ -56,10 +56,11 @@ def add_transaction_time(transaction_time):
 
 
 def valid_currency_amount(sender_amount,sent_amount,sender_currency,receiver_currency ):
-    if sender_amount <= sent_amount:
+    if sender_amount < sent_amount:
         raise ValueError("not enough money in the account")
     if receiver_currency != sender_currency:
         return True
+    return False
 
 def username_validate(data):
     if not validate_field_value("user_name", "user_name", dict.keys(data[0]), False):
@@ -69,3 +70,4 @@ def username_validate(data):
         i["surname"] = validate_user_full_name(i["user_name"])[1]
         del i["user_name"]
     return data
+

@@ -58,7 +58,6 @@ def do_func_with_args(args):
     if args.delete_incomplete:
         print(api.delete_users_with_incomplete_info())
 
-
 def main():
     initial_db_setup.create_database()
     do_func_with_args(init_args())
